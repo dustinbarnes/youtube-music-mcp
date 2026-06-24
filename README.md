@@ -66,10 +66,11 @@ Add this to your `claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add youtube-music -- node /path/to/youtube-music-mcp/dist/main.js
+claude mcp add youtube-music \
+  --env GOOGLE_CLIENT_ID=your-client-id \
+  --env GOOGLE_CLIENT_SECRET=your-client-secret \
+  -- node /path/to/youtube-music-mcp/dist/main.js
 ```
-
-Then add your credentials via `claude mcp edit youtube-music`.
 
 ## First run
 

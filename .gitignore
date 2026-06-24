@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+
+# Never commit auth tokens or local cache
+credentials.json
+cache.db
+*.db
+
+# OS
+.DS_Store

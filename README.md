@@ -18,7 +18,7 @@ Exposes 9 tools to Claude:
 | `remove_song_from_playlist` | Remove a song from a playlist |
 | `refresh_playlists` | Force a full sync from YouTube (useful after changes made on another device) |
 
-All playlist operations use the `"liked"` shorthand for your Liked Music playlist.
+All playlist operations accept `"liked"` as a shorthand for your Liked Music playlist.
 
 ## Prerequisites
 
@@ -33,9 +33,16 @@ All playlist operations use the `"liked"` shorthand for your Liked Music playlis
 3. Enable the **YouTube Data API v3** under *APIs & Services > Library*
 4. Go to *APIs & Services > Credentials* and click **Create Credentials > OAuth client ID**
 5. Choose **Desktop app** as the application type
-6. Download or note the **Client ID** and **Client Secret**
+6. Note the **Client ID** and **Client Secret**
 
-## Installation
+## Setup
+
+```bash
+git clone https://github.com/dustinbarnes/youtube-music-mcp
+cd youtube-music-mcp
+npm install
+npm run build
+```
 
 ### Claude Desktop
 
@@ -45,8 +52,8 @@ Add this to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "youtube-music": {
-      "command": "npx",
-      "args": ["youtube-music-mcp"],
+      "command": "node",
+      "args": ["/path/to/youtube-music-mcp/dist/main.js"],
       "env": {
         "GOOGLE_CLIENT_ID": "your-client-id",
         "GOOGLE_CLIENT_SECRET": "your-client-secret"
@@ -59,16 +66,16 @@ Add this to your `claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add youtube-music -- npx youtube-music-mcp
+claude mcp add youtube-music -- node /path/to/youtube-music-mcp/dist/main.js
 ```
 
-Then set your credentials in the MCP server environment via `claude mcp edit youtube-music`.
+Then add your credentials via `claude mcp edit youtube-music`.
 
 ## First run
 
-The first time the server starts, it will open your browser to complete Google sign-in. After you approve access, tokens are saved to `~/.config/youtube-music-mcp/credentials.json` and reused automatically. You won't need to sign in again unless you revoke access or delete the file.
+The first time the server starts, it will open your browser to complete Google sign-in. After you approve access, tokens are saved to `~/.config/youtube-music-mcp/credentials.json` and reused automatically.
 
-> **Never commit `credentials.json` or `cache.db` to version control.** They are listed in `.gitignore` but worth knowing about.
+> **Never commit `credentials.json` or `cache.db` to version control.** Both are in `.gitignore` but worth knowing about.
 
 ## Usage examples
 
@@ -85,17 +92,9 @@ Claude uses `search_songs` to find candidates and presents them to you before ad
 
 ## Local data
 
-The server keeps a local SQLite cache at `~/.config/youtube-music-mcp/cache.db` to reduce YouTube API quota usage (default: 10,000 units/day). Playlist contents update automatically when you make changes through Claude. Search results are cached for one hour. Use `refresh_playlists` to pull in changes made from other devices or apps.
+The server keeps a SQLite cache at `~/.config/youtube-music-mcp/cache.db` to reduce YouTube API quota usage (default: 10,000 units/day). Playlist contents update automatically when you make changes through Claude. Search results are cached for one hour. Use `refresh_playlists` to pull in changes made from other devices or apps.
 
 ## Development
-
-```bash
-git clone https://github.com/dustinbarnes/youtube-music-mcp
-cd youtube-music-mcp
-npm install
-cp .env.example .env  # fill in your credentials
-npm run dev
-```
 
 ```bash
 npm test          # run unit tests

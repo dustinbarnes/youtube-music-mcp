@@ -95,6 +95,19 @@ export function registerTools(server: McpServer, auth: OAuth2Client): void {
         if (cached.length > 0) return textResult(cached);
 
         const items = await fetchPlaylistItems(auth, resolvedId);
+        // Ensure a parent playlist row exists before inserting items (FK constraint).
+        // Needed for special playlists like LL (Liked Music) not returned by listPlaylists.
+        const existing = getPlaylists().find((p) => p.id === resolvedId);
+        if (!existing) {
+          upsertPlaylists([{
+            id: resolvedId,
+            title: playlistId === 'liked' || resolvedId === 'LL' ? 'Liked Music' : resolvedId,
+            description: '',
+            privacy: 'private',
+            itemCount: items.length,
+            cachedAt: Math.floor(Date.now() / 1000),
+          }]);
+        }
         upsertPlaylistItems(items);
         return textResult(items);
       } catch (err) {

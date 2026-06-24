@@ -7,7 +7,7 @@
     "youtube-music-mcp": "./bin/run.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/cache/schema.sql dist/cache/schema.sql",
     "dev": "tsx src/main.ts",
     "test": "vitest run",
     "test:watch": "vitest",

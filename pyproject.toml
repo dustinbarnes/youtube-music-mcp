@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "youtube-music-mcp"
+version = "0.2.0"
+description = "MCP server for managing YouTube Music playlists via Claude"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "ytmusicapi>=1.10.0",
+]
+
+[project.scripts]
+youtube-music-mcp = "youtube_music_mcp.server:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/youtube_music_mcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

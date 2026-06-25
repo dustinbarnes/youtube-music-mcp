@@ -1,10 +1,12 @@
 # youtube-music-mcp
 
-An MCP server for managing YouTube Music playlists via Claude. Add and remove songs, create playlists, and ask Claude to suggest music — all through conversation. Changes sync to YouTube Music and show up on your phone, CarPlay, or wherever you listen.
+A Python MCP server for managing YouTube Music playlists via Claude. Add and remove songs, create playlists, browse by mood, and ask Claude to suggest music — all through conversation. Changes sync to YouTube Music and show up on your phone, CarPlay, or wherever you listen.
+
+Uses [ytmusicapi](https://github.com/sigma67/ytmusicapi) as its backend, which talks directly to the YouTube Music internal API. This gives music-specific search (no music videos or compilations), mood/genre browsing, related song discovery, and direct access to your Liked Music.
 
 ## What it does
 
-Exposes 9 tools to Claude:
+Exposes 13 tools to Claude:
 
 | Tool | Description |
 |---|---|
@@ -13,36 +15,41 @@ Exposes 9 tools to Claude:
 | `create_playlist` | Create a new playlist |
 | `update_playlist` | Rename or update a playlist's description |
 | `delete_playlist` | Delete a playlist |
-| `search_songs` | Search YouTube for songs — returns up to 5 results to confirm before adding |
+| `search_songs` | Search for songs — music tracks only, no videos or compilations |
 | `add_song_to_playlist` | Add a confirmed song by video ID |
 | `remove_song_from_playlist` | Remove a song from a playlist |
-| `refresh_playlists` | Force a full sync from YouTube (useful after changes made on another device) |
+| `refresh_playlists` | Force a full sync from YouTube Music |
+| `get_liked_songs` | Get your Liked Music directly |
+| `get_mood_categories` | Browse available mood/genre categories |
+| `get_mood_playlists` | Get curated playlists for a mood category |
+| `get_song_related` | Find songs related to a given track |
 
-All playlist operations accept `"liked"` as a shorthand for your Liked Music playlist.
+All playlist tools accept `"liked"` as a shorthand for your Liked Music playlist.
 
 ## Prerequisites
 
-- Node.js 20+
-- A Google Cloud project with the **YouTube Data API v3** enabled
-- OAuth 2.0 credentials (Desktop app type)
-
-### Setting up Google credentials
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project (or select an existing one)
-3. Enable the **YouTube Data API v3** under *APIs & Services > Library*
-4. Go to *APIs & Services > Credentials* and click **Create Credentials > OAuth client ID**
-5. Choose **Desktop app** as the application type
-6. Note the **Client ID** and **Client Secret**
+- Python 3.10+
+- A Google account with YouTube Music
 
 ## Setup
 
 ```bash
 git clone https://github.com/dustinbarnes/youtube-music-mcp
 cd youtube-music-mcp
-npm install
-npm run build
+pip install -e .
 ```
+
+### Authenticate
+
+Run the one-time OAuth setup:
+
+```bash
+youtube-music-mcp --setup
+```
+
+This opens your browser to a Google sign-in page. After approving access, a token is saved to `~/.config/youtube-music-mcp/oauth.json` and reused automatically. You won't need to do this again unless you revoke access or delete the file.
+
+> **Never commit `oauth.json` or `cache.db` to version control.** Both are in `.gitignore`.
 
 ### Claude Desktop
 
@@ -52,12 +59,19 @@ Add this to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "youtube-music": {
-      "command": "node",
-      "args": ["/path/to/youtube-music-mcp/dist/main.js"],
-      "env": {
-        "GOOGLE_CLIENT_ID": "your-client-id",
-        "GOOGLE_CLIENT_SECRET": "your-client-secret"
-      }
+      "command": "/path/to/youtube-music-mcp/.venv/bin/youtube-music-mcp"
+    }
+  }
+}
+```
+
+Or if you installed globally with `pip install -e .`:
+
+```json
+{
+  "mcpServers": {
+    "youtube-music": {
+      "command": "youtube-music-mcp"
     }
   }
 }
@@ -66,41 +80,41 @@ Add this to your `claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add youtube-music \
-  --env GOOGLE_CLIENT_ID=your-client-id \
-  --env GOOGLE_CLIENT_SECRET=your-client-secret \
-  -- node /path/to/youtube-music-mcp/dist/main.js
+claude mcp add youtube-music -- youtube-music-mcp
 ```
 
-## First run
+Or with a venv:
 
-The first time the server starts, it will open your browser to complete Google sign-in. After you approve access, tokens are saved to `~/.config/youtube-music-mcp/credentials.json` and reused automatically.
-
-> **Never commit `credentials.json` or `cache.db` to version control.** Both are in `.gitignore` but worth knowing about.
+```bash
+claude mcp add youtube-music -- /path/to/youtube-music-mcp/.venv/bin/youtube-music-mcp
+```
 
 ## Usage examples
 
 Once connected, talk to Claude naturally:
 
 - *"What playlists do I have?"*
-- *"Add something chill and acoustic to my Evening playlist"*
 - *"Search for Phoebe Bridgers Garden Song"*
-- *"Create a new playlist called Road Trip and make it private"*
+- *"Add something upbeat and driving to my CarPlay playlist"*
+- *"What are the mood categories available?"*
+- *"Show me chill playlists"*
+- *"What songs are related to Fleetwood Mac - The Chain?"*
+- *"Create a new playlist called Road Trip"*
 - *"Remove the second song from my Workout playlist"*
-- *"Sync my playlists — I added some songs on my phone"*
+- *"Sync my playlists — I made changes on my phone"*
 
-Claude uses `search_songs` to find candidates and presents them to you before adding anything. You confirm the right version before it goes into the playlist.
+Claude uses `search_songs` to find music-specific results (no music videos or hour-long compilations) and presents them to you before adding anything.
 
 ## Local data
 
-The server keeps a SQLite cache at `~/.config/youtube-music-mcp/cache.db` to reduce YouTube API quota usage (default: 10,000 units/day). Playlist contents update automatically when you make changes through Claude. Search results are cached for one hour. Use `refresh_playlists` to pull in changes made from other devices or apps.
+The server keeps a SQLite cache at `~/.config/youtube-music-mcp/cache.db` to reduce API calls. Playlist contents update automatically when you make changes through Claude. Search results are cached for one hour. Use `refresh_playlists` to pull in changes made from other devices or apps.
 
 ## Development
 
 ```bash
-npm test          # run unit tests
-npm run typecheck # type check without building
-npm run build     # compile to dist/
+pip install -e ".[dev]"
+pytest                 # run tests
+pytest -v              # verbose
 ```
 
 ## Contributing

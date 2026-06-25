@@ -1,9 +1,15 @@
-node_modules/
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
 dist/
-.env
+build/
+.venv/
+venv/
 
-# Never commit auth tokens or local cache
-credentials.json
+# Auth tokens and local cache — never commit these
+oauth.json
+browser.json
 cache.db
 *.db
 
